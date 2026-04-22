@@ -575,7 +575,8 @@ function initLevel3(){
   const ga=gameArea();
   ga.style.cursor='crosshair';
 
-  spawnFallingIcons(3, 20, {goal:20, onCatch:null, onMiss:null, minSpeed:70, maxSpeed:160, clickable:false, allowMiss:true,
+  spawnFallingIcons(3, 20, {goal:20, onCatch:null, onMiss:null, minSpeed:70, maxSpeed:12
+    0, clickable:false, allowMiss:true,
     onIconTouch: onLevel3IconTouch});
   setupMarquee();
 }
@@ -593,7 +594,7 @@ function onLevel3IconTouch(fi){
     fi.dissolving=false;
     fi.y=-80;
     fi.x=rand(10,w-70);
-    fi.speed=rand(70,160);
+    fi.speed=rand(70,120);
     fi.el=createIconEl(fi, false);
     ga.appendChild(fi.el);
   },800);
