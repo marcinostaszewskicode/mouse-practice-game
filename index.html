@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🌟 Icon Adventure – Mouse Practice Game</title>
+<title>🌟 Ćwicz zręczność ręki 🌟</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Nunito:wght@400;700;900&display=swap');
 
@@ -276,12 +276,12 @@
 <div id="overlay">
   <div class="screen-card" id="screen-home">
     <div class="big-icon">🌟</div>
-    <h1>Icon Adventure!</h1>
-    <h2>Mouse Practice Game</h2>
+    <h1>Ćwicz zręczność ręki!</h1>
+    <h2>Poruszanie myszki na ekranie</h2>
     <div class="icons-row">🍎🌸🦋🍋🐸</div>
-    <p>Train your mouse skills through 4 exciting levels!<br>Click, catch, select and sort colourful icons.</p>
-    <button class="btn" onclick="startLevel(1)">▶ Play Level 1</button>
-    <button class="btn secondary" onclick="showHelp()">📖 How to Play</button>
+    <p>Ćwicz zręczność ręki i używanie myszki w 4 kolejnych poziomach!<br>Klikaj, łap, zaznaczaj i sortuj kolorowe ikony.</p>
+    <button class="btn" onclick="startLevel(1)">▶ Poziom 1</button>
+    <button class="btn secondary" onclick="showHelp()">📖 Jak grać</button>
   </div>
 </div>
 
@@ -367,15 +367,15 @@ function homeScreen(){
     <h1>Icon Adventure!</h1>
     <h2>Mouse Practice Game</h2>
     <div class="icons-row">🍎🌸🦋🍋🐸</div>
-    <p>Train your mouse skills through 4 exciting levels!<br>Click, catch, select and sort colourful icons.</p>
-    <button class="btn" onclick="startLevel(1)">▶ Play Level 1</button>
-    <button class="btn secondary" onclick="showHelp()">📖 How to Play</button>
+    <p>Ćwicz zręczność ręki i używanie myszki w 4 kolejnych poziomach!<br>Klikaj, łap, zaznaczaj i sortuj kolorowe ikony.</p>
+    <button class="btn" onclick="startLevel(1)">▶ Poziom 1</button>
+    <button class="btn secondary" onclick="showHelp()">📖 Jak grać</button>
   </div>`);
 }
 
 function showHelp(){
   showOverlay(`<div class="screen-card">
-    <h2>📖 How to Play</h2>
+    <h2>📖 Jak grać</h2>
     <p><b>Level 1 – Click in Order 🖱️</b><br>10 icons appear on screen. Click them in the order shown at the bottom!</p>
     <p><b>Level 2 – Catch the Fallers 🌧️</b><br>Icons fall from the sky. Click 15 of them before they hit the ground!</p>
     <p><b>Level 3 – Marquee Selection 🔲</b><br>Drag a selection box around 20 falling icons – without your cursor touching any of them!</p>
@@ -387,27 +387,27 @@ function showHelp(){
 function levelCompleteScreen(lv, pts){
   const stars = pts>=levelGoal ? 3 : pts>=Math.ceil(levelGoal*.6) ? 2 : 1;
   const starStr = '⭐'.repeat(stars)+'☆'.repeat(3-stars);
-  const next = lv<4 ? `<button class="btn" onclick="startLevel(${lv+1})">▶ Level ${lv+1}</button>` :
-    `<button class="btn" onclick="homeScreen()">🏠 Home</button>`;
+  const next = lv<4 ? `<button class="btn" onclick="startLevel(${lv+1})">▶ Poziom ${lv+1}</button>` :
+    `<button class="btn" onclick="homeScreen()">🏠 Początek</button>`;
   showOverlay(`<div class="screen-card">
     <div class="big-icon">${lv<4?'🎉':'🏆'}</div>
     <h2>Level ${lv} Complete!</h2>
     <div class="star-row">${starStr}</div>
     <p>You scored <b>${pts}</b> points!</p>
-    ${lv===4?'<p>You finished all 4 levels! Amazing! 🌟</p>':''}
+    ${lv===4?'<p>Wspaniale! Wszystkie poziomy ukończone!🌟</p>':''}
     ${next}
-    <button class="btn secondary" onclick="startLevel(${lv})">🔁 Retry</button>
-    <button class="btn secondary" onclick="homeScreen()">🏠 Home</button>
+    <button class="btn secondary" onclick="startLevel(${lv})">🔁 Ponownie</button>
+    <button class="btn secondary" onclick="homeScreen()">🏠 Początek</button>
   </div>`);
 }
 
 function levelFailScreen(lv){
   showOverlay(`<div class="screen-card">
     <div class="big-icon">😅</div>
-    <h2>Try Again!</h2>
-    <p>Don't give up – you can do it! 💪</p>
-    <button class="btn" onclick="startLevel(${lv})">🔁 Retry Level ${lv}</button>
-    <button class="btn secondary" onclick="homeScreen()">🏠 Home</button>
+    <h2>Ponownie!</h2>
+    <p>Nie poddawaj się! Dasz radę! 💪</p>
+    <button class="btn" onclick="startLevel(${lv})">🔁 Powtórz poziom ${lv}</button>
+    <button class="btn secondary" onclick="homeScreen()">🏠 Początek</button>
   </div>`);
 }
 
@@ -460,8 +460,8 @@ function startLevel(lv){
 function initLevel1(){
   levelGoal=10; levelProgress=0;
   orderIndex=0;
-  setMsg('Click icons in the left→right order!');
-  addInstruction('🖱️ Click icons in the order shown below!');
+  setMsg('Klikaj ikony po kolei od lewej do prawej!');
+  addInstruction('🖱️ Klikaj ikony w kolejności podanej na dole!');
 
   const pool = shuffle(ICONS).slice(0,10);
   orderList = shuffle(pool.map((ic,i)=>i));
@@ -570,8 +570,8 @@ function onLevel2Miss(fi){ /* no penalty */ }
 ================================================================ */
 function initLevel3(){
   levelGoal=20; levelProgress=0;
-  setMsg('Drag a box to select icons – don\'t touch them!');
-  addInstruction('🔲 Draw a selection box around icons – cursor must not touch them!');
+  setMsg('Zaznacz ikony, ale nie dotykaj ich kursorem myszki!');
+  addInstruction('🔲 Przciągnij ramkę wokoło ikonek - BEZ DOTYKANIA ICH MYSZKĄ!');
   const ga=gameArea();
   ga.style.cursor='crosshair';
 
@@ -657,8 +657,8 @@ function checkMarqueeSelection(sx,sy,e){
 function initLevel4(){
   levelGoal=25; levelProgress=0;
   iconScale=1.0; iconSizePx=64;
-  setMsg('Drag icons to the matching colour basket!');
-  addInstruction('🧺 Drag each icon to its matching colour basket in the corners!');
+  setMsg('Przeciągaj ikony do koszyków w odpowiednim kolorze!');
+  addInstruction('🧺 Przeciągaj każdą z ikon według jej koloru do koszyka w rogu!');
 
   // Create baskets
   BASKET_DEFS.forEach(bd=>{
