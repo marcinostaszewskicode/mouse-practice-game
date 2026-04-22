@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌟 Icon Adventure – Mouse Practice Game</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Nunito:wght@400;700;900&display=swap');
+
+  :root {
+    --sky: #e0f7fa;
+    --cloud: #fff;
+    --grass: #a5d6a7;
+    --sun: #FFD600;
+    --accent: #FF6F00;
+    --pink: #F06292;
+    --purple: #9575CD;
+    --teal: #26C6DA;
+    --score-bg: rgba(255,255,255,0.88);
+    --btn-radius: 18px;
+    --shadow: 0 4px 18px rgba(0,0,0,0.13);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Baloo 2', cursive;
+    background: linear-gradient(180deg, #b3e5fc 0%, #e0f7fa 60%, #c8e6c9 100%);
+    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── HUD ── */
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 18px;
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(6px);
+    border-bottom: 3px solid #b2ebf2;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  }
+  #hud .level-badge {
+    background: linear-gradient(135deg, #FF6F00, #FFD600);
+    color: #fff; font-size: 1rem; font-weight: 800;
+    padding: 4px 14px; border-radius: 30px;
+    letter-spacing: .5px; text-shadow: 0 1px 3px rgba(0,0,0,.3);
+    white-space: nowrap;
+  }
+  #hud .score-box {
+    background: var(--score-bg);
+    border: 2px solid #b2ebf2;
+    border-radius: 12px;
+    padding: 3px 14px;
+    font-size: 1rem; font-weight: 700;
+    color: #333;
+  }
+  #hud .msg {
+    flex: 1; text-align: center;
+    font-size: 1.05rem; font-weight: 700; color: #555;
+    min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+  #hud .lives { font-size: 1.2rem; }
+
+  /* ── GAME AREA ── */
+  #game-area {
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 90px;
+    overflow: hidden;
+  }
+
+  /* ── BOTTOM BAR ── */
+  #bottom-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    min-height: 88px;
+    background: rgba(255,255,255,0.88);
+    border-top: 3px solid #b2ebf2;
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; flex-wrap: wrap;
+    padding: 6px 14px;
+  }
+
+  /* ── ICON ELEMENT ── */
+  .icon {
+    position: absolute;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.4rem;
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.85);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+    will-change: transform;
+    z-index: 100;
+    pointer-events: auto;
+  }
+  .icon:hover { transform: scale(1.12); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
+  .icon.flash-red {
+    animation: flashRed .5s ease;
+  }
+  @keyframes flashRed {
+    0%,100% { background: rgba(255,255,255,.85); box-shadow: 0 4px 14px rgba(0,0,0,.15); }
+    40% { background: #FF5252; box-shadow: 0 0 24px #FF5252; }
+  }
+  .icon.wrong { animation: flashRed .5s ease; }
+  .icon.dissolve {
+    animation: dissolveOut .8s forwards;
+    pointer-events: none;
+  }
+  @keyframes dissolveOut {
+    0% { opacity:1; box-shadow: 0 0 0 0 #FF5252; }
+    30% { box-shadow: 0 0 20px 10px #FF5252; background: #FF5252; }
+    100% { opacity:0; transform:scale(1.4); }
+  }
+  .icon.success-pop {
+    animation: successPop .4s ease;
+  }
+  @keyframes successPop {
+    0% { transform:scale(1); }
+    50% { transform:scale(1.4); }
+    100% { transform:scale(0); opacity:0; }
+  }
+
+  /* ── ORDER LIST (level 1) ── */
+  .order-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 52px; height: 52px; font-size: 1.9rem;
+    background: rgba(255,255,255,0.9);
+    border-radius: 50%;
+    border: 3px solid transparent;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    transition: border-color .2s, opacity .2s;
+    flex-shrink: 0;
+  }
+  .order-icon.done { opacity:.35; border-color: #4CAF50; }
+  .order-icon.current { border-color: #FF6F00; animation: pulse 1s infinite; }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,111,0,.5); }
+    50% { box-shadow: 0 0 0 8px rgba(255,111,0,0); }
+  }
+  .order-icon.wrong-target { animation: flashRed .5s ease; border-color: #FF5252; }
+
+  /* ── MARQUEE (level 3) ── */
+  #marquee-rect {
+    position: fixed;
+    border: 3px dashed #FF6F00;
+    background: rgba(255,200,0,.12);
+    pointer-events: none;
+    z-index: 150;
+    display: none;
+  }
+
+  /* ── BASKETS (level 4) ── */
+  .basket {
+    position: fixed;
+    width: 110px; height: 110px;
+    border-radius: 18px;
+    border: 4px dashed rgba(255,255,255,.7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.4rem;
+    z-index: 190;
+    pointer-events: none;
+    transition: transform .2s, border-color .2s;
+  }
+  .basket.active { border-color: #FFD600; transform: scale(1.08); }
+  .basket .basket-label {
+    position: absolute; bottom: 6px; left: 0; right: 0;
+    text-align: center; font-size: .75rem; font-weight: 800; color: rgba(255,255,255,.9);
+    text-shadow: 0 1px 3px rgba(0,0,0,.5);
+  }
+  .basket .basket-count {
+    position: absolute; top: 6px; right: 8px;
+    font-size: .85rem; font-weight: 900; color: #fff;
+    background: rgba(0,0,0,.3); border-radius: 12px; padding: 1px 7px;
+  }
+
+  /* ── OVERLAY / SCREENS ── */
+  #overlay {
+    position: fixed; inset: 0; z-index: 400;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(100,200,255,.25);
+    backdrop-filter: blur(8px);
+  }
+  .screen-card {
+    background: linear-gradient(145deg, #fff 60%, #e0f7fa);
+    border-radius: 28px;
+    padding: 40px 48px;
+    text-align: center;
+    box-shadow: 0 12px 48px rgba(0,0,0,.18);
+    max-width: 520px; width: 90%;
+    animation: cardIn .4s cubic-bezier(.22,1,.36,1);
+  }
+  @keyframes cardIn {
+    from { transform: scale(.7) translateY(40px); opacity:0; }
+    to   { transform: scale(1) translateY(0);   opacity:1; }
+  }
+  .screen-card h1 { font-size: 2.5rem; font-weight: 900; color: #FF6F00; line-height:1.1; }
+  .screen-card h2 { font-size: 1.9rem; font-weight: 800; color: #333; margin: 10px 0 8px; }
+  .screen-card p  { font-size: 1.05rem; color: #555; line-height: 1.55; margin-bottom: 10px; }
+  .screen-card .big-icon { font-size: 4rem; margin-bottom: 8px; }
+  .screen-card .icons-row { font-size: 2rem; margin: 8px 0; letter-spacing:6px; }
+  .btn {
+    display: inline-block; margin: 8px 6px 0;
+    padding: 14px 36px;
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.15rem; font-weight: 800;
+    color: #fff;
+    background: linear-gradient(135deg, #FF6F00, #FFD600);
+    border: none; border-radius: var(--btn-radius);
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(255,111,0,.35);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(255,111,0,.45); }
+  .btn.secondary {
+    background: linear-gradient(135deg, #9575CD, #4FC3F7);
+    box-shadow: 0 4px 16px rgba(149,117,205,.35);
+  }
+  .star-row { font-size: 1.9rem; margin: 6px 0; }
+
+  /* ── FALLING ICON WRAPPER ── */
+  .falling-wrap {
+    position: absolute;
+    top: 0;
+  }
+
+  /* ── PROGRESS BAR ── */
+  #progress-bar-wrap {
+    position: fixed; bottom: 88px; left: 0; right: 0; height: 8px; z-index: 199;
+    background: rgba(255,255,255,.4);
+  }
+  #progress-bar {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #FF6F00, #FFD600);
+    transition: width .35s ease;
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* ── LEVEL INFO BADGE ── */
+  .level-instruction {
+    position: fixed; top: 68px; left: 50%; transform: translateX(-50%);
+    background: rgba(255,255,255,.92);
+    border-radius: 20px; padding: 6px 20px;
+    font-size: .92rem; font-weight: 700; color: #555;
+    box-shadow: 0 2px 10px rgba(0,0,0,.1);
+    z-index: 199; pointer-events: none;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="level-badge" id="level-label">Level 1</div>
+  <div class="score-box">⭐ <span id="score-val">0</span></div>
+  <div class="msg" id="hud-msg">Click icons in the right order!</div>
+  <div class="lives" id="lives-display"></div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+
+<!-- GAME AREA -->
+<div id="game-area"></div>
+
+<!-- BOTTOM BAR -->
+<div id="bottom-bar"></div>
+
+<!-- MARQUEE RECT -->
+<div id="marquee-rect"></div>
+
+<!-- OVERLAY / SCREENS -->
+<div id="overlay">
+  <div class="screen-card" id="screen-home">
+    <div class="big-icon">🌟</div>
+    <h1>Icon Adventure!</h1>
+    <h2>Mouse Practice Game</h2>
+    <div class="icons-row">🍎🌸🦋🍋🐸</div>
+    <p>Train your mouse skills through 4 exciting levels!<br>Click, catch, select and sort colourful icons.</p>
+    <button class="btn" onclick="startLevel(1)">▶ Play Level 1</button>
+    <button class="btn secondary" onclick="showHelp()">📖 How to Play</button>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   ICON DATA
+================================================================ */
+const ICONS = [
+  {e:'🍎',c:'red'},{e:'🍊',c:'orange'},{e:'🍋',c:'yellow'},{e:'🍇',c:'purple'},
+  {e:'🍓',c:'red'},{e:'🍒',c:'red'},{e:'🫐',c:'blue'},{e:'🍉',c:'red'},
+  {e:'🍑',c:'orange'},{e:'🥝',c:'green'},
+  {e:'🌸',c:'pink'},{e:'🌻',c:'yellow'},{e:'🌹',c:'red'},{e:'🌷',c:'pink'},
+  {e:'🌿',c:'green'},{e:'🍀',c:'green'},{e:'🌾',c:'yellow'},{e:'🍁',c:'orange'},
+  {e:'🦋',c:'blue'},{e:'🐸',c:'green'},{e:'🐝',c:'yellow'},{e:'🐞',c:'red'},
+  {e:'🦜',c:'green'},{e:'🐬',c:'blue'},{e:'🦊',c:'orange'},{e:'🐨',c:'blue'},
+  {e:'🐙',c:'purple'},{e:'🦄',c:'purple'},{e:'🐠',c:'orange'},{e:'🦩',c:'pink'},
+  {e:'⭐',c:'yellow'},{e:'🌈',c:'blue'},{e:'🍄',c:'red'},{e:'🎈',c:'red'},
+  {e:'💎',c:'blue'},{e:'🍭',c:'pink'}
+];
+
+const BASKET_COLORS = ['red','blue','green','orange','yellow','purple','pink'];
+const BASKET_DEFS = [
+  {c:'red',   emoji:'🍎', label:'Red',    pos:'top:60px;left:10px',    bg:'rgba(229,57,53,.75)'},
+  {c:'blue',  emoji:'🫐', label:'Blue',   pos:'top:60px;right:10px',   bg:'rgba(25,118,210,.75)'},
+  {c:'green', emoji:'🍀', label:'Green',  pos:'bottom:90px;left:10px', bg:'rgba(56,142,60,.75)'},
+  {c:'orange',emoji:'🍊', label:'Orange', pos:'bottom:90px;right:10px',bg:'rgba(230,81,0,.75)'},
+];
+
+/* ================================================================
+   STATE
+================================================================ */
+let level = 0, score = 0, lives = 5;
+let levelIcons = [], orderList = [], orderIndex = 0;
+let fallingTimers = [], animFrames = [];
+let fallingItems = [];
+let levelGoal = 0, levelProgress = 0;
+let gameActive = false;
+let marqueeActive = false, marqueeStart = {x:0,y:0};
+let dragItem = null, dragOffX = 0, dragOffY = 0;
+let iconScale = 1.0;
+let basketCounts = {red:0,blue:0,green:0,orange:0};
+let iconSizePx = 64;
+
+/* ================================================================
+   UTILS
+================================================================ */
+function rand(a,b){ return Math.random()*(b-a)+a; }
+function randInt(a,b){ return Math.floor(rand(a,b+1)); }
+function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
+
+function pickRandom(n, pool){
+  const p = shuffle(pool);
+  const out = [];
+  while(out.length < n) out.push(...p.slice(0, Math.min(n-out.length, p.length)));
+  return out.slice(0,n);
+}
+
+function gameArea(){return document.getElementById('game-area');}
+function bottomBar(){return document.getElementById('bottom-bar');}
+
+function setScore(v){ score=v; document.getElementById('score-val').textContent=v; }
+function setMsg(t){ document.getElementById('hud-msg').textContent=t; }
+function setLives(v){
+  lives=v;
+  document.getElementById('lives-display').textContent='❤️'.repeat(Math.max(0,v));
+}
+function setProgress(done,total){
+  document.getElementById('progress-bar').style.width=(done/total*100)+'%';
+}
+
+function hideOverlay(){ document.getElementById('overlay').style.display='none'; }
+function showOverlay(html){
+  const o=document.getElementById('overlay');
+  o.innerHTML=html; o.style.display='flex';
+}
+
+/* ================================================================
+   OVERLAY SCREENS
+================================================================ */
+function homeScreen(){
+  showOverlay(`<div class="screen-card">
+    <div class="big-icon">🌟</div>
+    <h1>Icon Adventure!</h1>
+    <h2>Mouse Practice Game</h2>
+    <div class="icons-row">🍎🌸🦋🍋🐸</div>
+    <p>Train your mouse skills through 4 exciting levels!<br>Click, catch, select and sort colourful icons.</p>
+    <button class="btn" onclick="startLevel(1)">▶ Play Level 1</button>
+    <button class="btn secondary" onclick="showHelp()">📖 How to Play</button>
+  </div>`);
+}
+
+function showHelp(){
+  showOverlay(`<div class="screen-card">
+    <h2>📖 How to Play</h2>
+    <p><b>Level 1 – Click in Order 🖱️</b><br>10 icons appear on screen. Click them in the order shown at the bottom!</p>
+    <p><b>Level 2 – Catch the Fallers 🌧️</b><br>Icons fall from the sky. Click 15 of them before they hit the ground!</p>
+    <p><b>Level 3 – Marquee Selection 🔲</b><br>Drag a selection box around 20 falling icons – without your cursor touching any of them!</p>
+    <p><b>Level 4 – Drag & Sort 🧺</b><br>Drag 25 falling icons into the matching colour basket in the corners!</p>
+    <button class="btn" onclick="homeScreen()">◀ Back</button>
+  </div>`);
+}
+
+function levelCompleteScreen(lv, pts){
+  const stars = pts>=levelGoal ? 3 : pts>=Math.ceil(levelGoal*.6) ? 2 : 1;
+  const starStr = '⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  const next = lv<4 ? `<button class="btn" onclick="startLevel(${lv+1})">▶ Level ${lv+1}</button>` :
+    `<button class="btn" onclick="homeScreen()">🏠 Home</button>`;
+  showOverlay(`<div class="screen-card">
+    <div class="big-icon">${lv<4?'🎉':'🏆'}</div>
+    <h2>Level ${lv} Complete!</h2>
+    <div class="star-row">${starStr}</div>
+    <p>You scored <b>${pts}</b> points!</p>
+    ${lv===4?'<p>You finished all 4 levels! Amazing! 🌟</p>':''}
+    ${next}
+    <button class="btn secondary" onclick="startLevel(${lv})">🔁 Retry</button>
+    <button class="btn secondary" onclick="homeScreen()">🏠 Home</button>
+  </div>`);
+}
+
+function levelFailScreen(lv){
+  showOverlay(`<div class="screen-card">
+    <div class="big-icon">😅</div>
+    <h2>Try Again!</h2>
+    <p>Don't give up – you can do it! 💪</p>
+    <button class="btn" onclick="startLevel(${lv})">🔁 Retry Level ${lv}</button>
+    <button class="btn secondary" onclick="homeScreen()">🏠 Home</button>
+  </div>`);
+}
+
+/* ================================================================
+   CLEANUP
+================================================================ */
+function clearLevel(){
+  fallingTimers.forEach(clearTimeout);
+  fallingTimers = [];
+  animFrames.forEach(cancelAnimationFrame);
+  animFrames = [];
+  fallingItems.forEach(fi=>{ if(fi.raf) cancelAnimationFrame(fi.raf); });
+  fallingItems = [];
+  gameArea().innerHTML='';
+  bottomBar().innerHTML='';
+  document.querySelectorAll('.basket').forEach(b=>b.remove());
+  document.querySelector('.level-instruction')?.remove();
+  document.getElementById('marquee-rect').style.display='none';
+  gameArea().onmousedown=null;
+  gameArea().onmousemove=null;
+  gameArea().onmouseup=null;
+  gameArea().style.cursor='default';
+  document.onmousemove=null;
+  document.onmouseup=null;
+  iconScale = 1.0;
+  iconSizePx = 64;
+}
+
+/* ================================================================
+   START LEVEL
+================================================================ */
+function startLevel(lv){
+  clearLevel();
+  hideOverlay();
+  level=lv; gameActive=true;
+  setScore(score);
+  document.getElementById('level-label').textContent=`Level ${lv}`;
+  setLives(5);
+  setProgress(0,1);
+
+  if(lv===1) initLevel1();
+  else if(lv===2) initLevel2();
+  else if(lv===3) initLevel3();
+  else if(lv===4) initLevel4();
+}
+
+/* ================================================================
+   LEVEL 1 – Click in Order
+================================================================ */
+function initLevel1(){
+  levelGoal=10; levelProgress=0;
+  orderIndex=0;
+  setMsg('Click icons in the left→right order!');
+  addInstruction('🖱️ Click icons in the order shown below!');
+
+  const pool = shuffle(ICONS).slice(0,10);
+  orderList = shuffle(pool.map((ic,i)=>i));
+  levelIcons = pool.map((ic,i)=>({...ic, id:i}));
+
+  const ga = gameArea();
+  const w = ga.clientWidth, h = ga.clientHeight;
+  const positions = generateNoOverlapPositions(10, 68, w, h);
+
+  levelIcons.forEach((ic,i)=>{
+    const el = document.createElement('div');
+    el.className='icon'; el.textContent=ic.e;
+    el.style.left=positions[i].x+'px';
+    el.style.top=positions[i].y+'px';
+    el.dataset.id=ic.id;
+    el.addEventListener('click',()=>onLevel1Click(ic.id, el));
+    ga.appendChild(el);
+  });
+
+  renderOrderBar();
+}
+
+function generateNoOverlapPositions(n, sz, w, h){
+  const positions=[], maxTry=500;
+  for(let i=0;i<n;i++){
+    let placed=false, tries=0;
+    while(!placed && tries<maxTry){
+      const x=rand(10,w-sz-10), y=rand(10,h-sz-10);
+      const overlap=positions.some(p=>Math.abs(p.x-x)<sz+8 && Math.abs(p.y-y)<sz+8);
+      if(!overlap){ positions.push({x,y}); placed=true; }
+      tries++;
+    }
+    if(!placed) positions.push({x:rand(10,w-sz-10),y:rand(10,h-sz-10)});
+  }
+  return positions;
+}
+
+function renderOrderBar(){
+  const bar = bottomBar();
+  bar.innerHTML='<span style="font-size:.9rem;font-weight:700;color:#888;margin-right:6px;">Order:</span>';
+  orderList.forEach((id,idx)=>{
+    const ic = levelIcons[id];
+    const span = document.createElement('span');
+    span.className='order-icon'+(idx<orderIndex?' done':idx===orderIndex?' current':'');
+    span.textContent=ic.e;
+    span.id=`order-${idx}`;
+    bar.appendChild(span);
+  });
+}
+
+function onLevel1Click(id, el){
+  if(!gameActive) return;
+  const expected = orderList[orderIndex];
+  if(id===expected){
+    el.classList.add('success-pop');
+    document.getElementById(`order-${orderIndex}`)?.classList.add('done');
+    document.getElementById(`order-${orderIndex}`)?.classList.remove('current');
+    setTimeout(()=>el.remove(),380);
+    orderIndex++;
+    levelProgress=orderIndex;
+    setProgress(levelProgress,10);
+    setScore(score+10);
+    if(orderIndex===10){
+      gameActive=false;
+      setTimeout(()=>levelCompleteScreen(1,score),500);
+    } else {
+      document.getElementById(`order-${orderIndex}`)?.classList.add('current');
+    }
+  } else {
+    // Wrong click – flash both icon and expected order slot
+    el.classList.add('flash-red');
+    const expEl = document.querySelector(`[data-id="${expected}"]`);
+    expEl?.classList.add('flash-red');
+    document.getElementById(`order-${orderIndex}`)?.classList.add('wrong-target');
+    setTimeout(()=>{
+      el.classList.remove('flash-red');
+      expEl?.classList.remove('flash-red');
+      document.getElementById(`order-${orderIndex}`)?.classList.remove('wrong-target');
+      document.getElementById(`order-${orderIndex}`)?.classList.add('current');
+    },550);
+    setLives(lives-1);
+    if(lives<=1){ gameActive=false; setTimeout(()=>levelFailScreen(1),400); }
+  }
+}
+
+/* ================================================================
+   LEVEL 2 – Falling Icons, Click to Catch
+================================================================ */
+function initLevel2(){
+  levelGoal=15; levelProgress=0;
+  setMsg('Click the falling icons! Catch 15!');
+  addInstruction('🌧️ Click icons as they fall – don\'t let them escape!');
+  spawnFallingIcons(2, 15, {goal:15, onCatch:onLevel2Catch, onMiss:onLevel2Miss, minSpeed:90, maxSpeed:200, clickable:true, allowMiss:true});
+}
+
+function onLevel2Catch(el, fi){
+  levelProgress++;
+  setProgress(levelProgress,15);
+  setScore(score+12);
+  if(levelProgress>=15){ gameActive=false; setTimeout(()=>levelCompleteScreen(2,score),600); }
+}
+function onLevel2Miss(fi){ /* no penalty */ }
+
+/* ================================================================
+   LEVEL 3 – Marquee Selection (no cursor touch)
+================================================================ */
+function initLevel3(){
+  levelGoal=20; levelProgress=0;
+  setMsg('Drag a box to select icons – don\'t touch them!');
+  addInstruction('🔲 Draw a selection box around icons – cursor must not touch them!');
+  const ga=gameArea();
+  ga.style.cursor='crosshair';
+
+  spawnFallingIcons(3, 20, {goal:20, onCatch:null, onMiss:null, minSpeed:70, maxSpeed:160, clickable:false, allowMiss:true,
+    onIconTouch: onLevel3IconTouch});
+  setupMarquee();
+}
+
+function onLevel3IconTouch(fi){
+  // Icon touched by cursor – dissolve and respawn at top
+  if(!fi.el || fi.dissolving) return;
+  fi.dissolving=true;
+  fi.el.classList.add('dissolve');
+  setTimeout(()=>{
+    if(fi.el) fi.el.remove();
+    // Respawn
+    const ga=gameArea();
+    const w=ga.clientWidth;
+    fi.dissolving=false;
+    fi.y=-80;
+    fi.x=rand(10,w-70);
+    fi.speed=rand(70,160);
+    fi.el=createIconEl(fi, false);
+    ga.appendChild(fi.el);
+  },800);
+}
+
+function setupMarquee(){
+  const ga=gameArea();
+  const mr=document.getElementById('marquee-rect');
+  let sx=0,sy=0;
+  ga.onmousedown=e=>{
+    if(e.button!==0) return;
+    const r=ga.getBoundingClientRect();
+    sx=e.clientX-r.left; sy=e.clientY-r.top;
+    marqueeActive=true;
+    mr.style.cssText=`display:block;left:${sx}px;top:${sy+60}px;width:0;height:0;`;
+  };
+  ga.onmousemove=e=>{
+    if(!marqueeActive) return;
+    const r=ga.getBoundingClientRect();
+    const cx=e.clientX-r.left, cy=e.clientY-r.top;
+    const x=Math.min(sx,cx), y=Math.min(sy,cy);
+    const w=Math.abs(cx-sx), h=Math.abs(cy-sy);
+    mr.style.left=x+'px';
+    mr.style.top=(y+60)+'px';
+    mr.style.width=w+'px';
+    mr.style.height=h+'px';
+  };
+  ga.onmouseup=e=>{
+    if(!marqueeActive) return;
+    marqueeActive=false;
+    mr.style.display='none';
+    checkMarqueeSelection(sx, sy, e);
+  };
+}
+
+function checkMarqueeSelection(sx,sy,e){
+  const ga=gameArea();
+  const r=ga.getBoundingClientRect();
+  const cx=e.clientX-r.left, cy=e.clientY-r.top;
+  const mx=Math.min(sx,cx), my=Math.min(sy,cy);
+  const mw=Math.abs(cx-sx), mh=Math.abs(cy-sy);
+
+  fallingItems.forEach(fi=>{
+    if(!fi.el || fi.dissolving || fi.caught) return;
+    const ix=fi.x+32, iy=fi.y+32; // icon center relative to game area
+    if(ix>=mx && ix<=mx+mw && iy>=my && iy<=my+mh){
+      fi.caught=true;
+      fi.el.classList.add('success-pop');
+      setTimeout(()=>{ if(fi.el){ fi.el.remove(); fi.el=null; }},380);
+      levelProgress++;
+      setProgress(levelProgress,20);
+      setScore(score+15);
+      if(levelProgress>=20){ gameActive=false; setTimeout(()=>levelCompleteScreen(3,score),600); }
+    }
+  });
+}
+
+/* ================================================================
+   LEVEL 4 – Drag & Sort into Baskets
+================================================================ */
+function initLevel4(){
+  levelGoal=25; levelProgress=0;
+  iconScale=1.0; iconSizePx=64;
+  setMsg('Drag icons to the matching colour basket!');
+  addInstruction('🧺 Drag each icon to its matching colour basket in the corners!');
+
+  // Create baskets
+  BASKET_DEFS.forEach(bd=>{
+    const b=document.createElement('div');
+    b.className='basket'; b.id='basket-'+bd.c;
+    b.innerHTML=`<span style="font-size:2.4rem">${bd.emoji}</span>
+      <span class="basket-label">${bd.label}</span>
+      <span class="basket-count" id="bc-${bd.c}">0</span>`;
+    b.style.cssText=bd.pos+';background:'+bd.bg+';'+b.style.cssText;
+    b.setAttribute('style',`${bd.pos};background:${bd.bg};position:fixed;width:110px;height:110px;border-radius:18px;border:4px dashed rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font-size:2.4rem;z-index:190;pointer-events:none;`);
+    document.body.appendChild(b);
+  });
+
+  spawnFallingIcons(4, 25, {goal:25, clickable:false, allowMiss:true, minSpeed:80, maxSpeed:180, dragSort:true});
+  setupDragSort();
+}
+
+function setupDragSort(){
+  document.onmousemove=e=>{
+    if(!dragItem) return;
+    dragItem.el.style.left=(e.clientX-dragOffX)+'px';
+    dragItem.el.style.top=(e.clientY-dragOffY)+'px';
+    dragItem.el.style.zIndex=999;
+    dragItem.el.style.transform='scale(1.15) rotate(5deg)';
+
+    // Highlight matching basket
+    BASKET_DEFS.forEach(bd=>{
+      const bel=document.getElementById('basket-'+bd.c);
+      if(!bel) return;
+      const br=bel.getBoundingClientRect();
+      const inside=e.clientX>=br.left&&e.clientX<=br.right&&e.clientY>=br.top&&e.clientY<=br.bottom;
+      bel.classList.toggle('active',inside && bd.c===dragItem.data.c);
+    });
+  };
+  document.onmouseup=e=>{
+    if(!dragItem) return;
+    const fi=dragItem;
+    dragItem=null;
+
+    let dropped=false;
+    BASKET_DEFS.forEach(bd=>{
+      if(dropped) return;
+      const bel=document.getElementById('basket-'+bd.c);
+      if(!bel) return;
+      const br=bel.getBoundingClientRect();
+      if(e.clientX>=br.left&&e.clientX<=br.right&&e.clientY>=br.top&&e.clientY<=br.bottom){
+        if(bd.c===fi.data.c){
+          // Correct!
+          dropped=true;
+          fi.el.classList.add('success-pop');
+          setTimeout(()=>{ if(fi.el){ fi.el.remove(); fi.el=null; } },380);
+          fi.caught=true;
+          basketCounts[bd.c]=(basketCounts[bd.c]||0)+1;
+          const bc=document.getElementById('bc-'+bd.c);
+          if(bc) bc.textContent=basketCounts[bd.c];
+          levelProgress++;
+          setProgress(levelProgress,25);
+          setScore(score+20);
+          // Shrink remaining icons
+          shrinkRemainingIcons();
+          if(levelProgress>=25){ gameActive=false; setTimeout(()=>levelCompleteScreen(4,score),600); }
+        } else {
+          // Wrong basket
+          fi.el.classList.add('flash-red');
+          fi.el.style.transform='';
+          fi.el.style.zIndex=100;
+          setTimeout(()=>fi.el?.classList.remove('flash-red'),600);
+          setLives(lives-1);
+          if(lives<=1){ gameActive=false; setTimeout(()=>levelFailScreen(4),400); }
+        }
+        bel.classList.remove('active');
+      }
+    });
+    if(!dropped && fi.el){
+      fi.el.style.transform='';
+      fi.el.style.zIndex=100;
+      BASKET_DEFS.forEach(bd=>document.getElementById('basket-'+bd.c)?.classList.remove('active'));
+    }
+  };
+}
+
+function shrinkRemainingIcons(){
+  iconScale = Math.max(0.4, iconScale - 0.03);
+  iconSizePx = Math.round(64 * iconScale);
+  fallingItems.forEach(fi=>{
+    if(!fi.el || fi.caught) return;
+    fi.el.style.width=iconSizePx+'px';
+    fi.el.style.height=iconSizePx+'px';
+    fi.el.style.fontSize=(iconSizePx*.55)+'px';
+  });
+}
+
+/* ================================================================
+   GENERIC FALLING ICON ENGINE
+================================================================ */
+function spawnFallingIcons(lv, totalGoal, opts){
+  const ga=gameArea();
+  const w=ga.clientWidth;
+  let spawned=0, onScreen=0;
+  const MAX_SCREEN=randInt(3,5);
+  const pool=shuffle(ICONS);
+
+  function pickColor(c){
+    // Only use basket colors in level 4
+    if(lv===4) return BASKET_DEFS[Math.floor(Math.random()*BASKET_DEFS.length)].c;
+    return c;
+  }
+
+  function trySpawn(){
+    if(!gameActive) return;
+    if(spawned>=totalGoal+20 && fallingItems.filter(f=>!f.caught&&!f.dissolving).length===0){
+      // All spawned and gone without enough catches
+      if(levelProgress<levelGoal){ setTimeout(()=>{ if(gameActive) levelFailScreen(lv); },400); }
+      return;
+    }
+    const active=fallingItems.filter(f=>!f.caught&&!f.dissolving).length;
+    if(active<5 && spawned<totalGoal+30){
+      const ic=pool[spawned % pool.length];
+      const fi={
+        data: lv===4 ? {...ICONS[Math.floor(Math.random()*ICONS.length)], c:BASKET_DEFS[Math.floor(Math.random()*BASKET_DEFS.length)].c} : ic,
+        x: rand(10, w-74),
+        y: -80,
+        speed: rand(opts.minSpeed||80, opts.maxSpeed||180),
+        caught: false,
+        dissolving: false,
+        raf: null,
+        el: null,
+        id: spawned
+      };
+      if(lv===4) fi.data=fi.data; // already set
+      fi.el=createIconEl(fi, opts.clickable, opts, lv);
+      ga.appendChild(fi.el);
+      fallingItems.push(fi);
+      spawned++;
+      animateFalling(fi, opts, lv);
+    }
+    fallingTimers.push(setTimeout(trySpawn, rand(600,1800)));
+  }
+  trySpawn();
+}
+
+function createIconEl(fi, clickable, opts, lv){
+  const el=document.createElement('div');
+  el.className='icon';
+  el.textContent=fi.data.e;
+  el.style.left=fi.x+'px';
+  el.style.top=fi.y+'px';
+  el.style.width=iconSizePx+'px';
+  el.style.height=iconSizePx+'px';
+  el.style.fontSize=(iconSizePx*.55)+'px';
+  // Color glow for level 4
+  if(lv===4){
+    const colorMap={red:'#ef5350',blue:'#42a5f5',green:'#66bb6a',orange:'#ffa726',yellow:'#ffee58',purple:'#ab47bc',pink:'#ec407a'};
+    const glow=colorMap[fi.data.c]||'#aaa';
+    el.style.boxShadow=`0 0 0 4px ${glow}, 0 4px 14px rgba(0,0,0,.15)`;
+    el.style.borderBottom=`4px solid ${glow}`;
+  }
+  if(clickable){
+    el.style.cursor='pointer';
+    el.addEventListener('click',()=>{
+      if(!gameActive||fi.caught||fi.dissolving) return;
+      fi.caught=true;
+      cancelAnimationFrame(fi.raf);
+      el.classList.add('success-pop');
+      setTimeout(()=>{ el.remove(); fi.el=null; },380);
+      if(opts && opts.onCatch) opts.onCatch(el,fi);
+    });
+  }
+  if(lv===4){
+    el.style.cursor='grab';
+    el.addEventListener('mousedown',ev=>{
+      if(!gameActive||fi.caught||fi.dissolving) return;
+      ev.preventDefault();
+      cancelAnimationFrame(fi.raf);
+      const er=el.getBoundingClientRect();
+      dragOffX=ev.clientX-er.left;
+      dragOffY=ev.clientY-er.top;
+      fi.dragging=true;
+      dragItem=fi;
+      el.style.cursor='grabbing';
+    });
+  }
+  if(lv===3){
+    // Mouse-enter = dissolve
+    el.addEventListener('mouseenter',()=>{
+      if(!gameActive||fi.caught||fi.dissolving) return;
+      if(opts && opts.onIconTouch) opts.onIconTouch(fi);
+    });
+  }
+  return el;
+}
+
+function animateFalling(fi, opts, lv){
+  if(fi.caught||fi.dissolving) return;
+  const ga=gameArea();
+  const h=ga.clientHeight;
+  let last=null;
+  function frame(ts){
+    if(!gameActive||fi.caught||fi.dissolving||fi.dragging) return;
+    if(!last) last=ts;
+    const dt=(ts-last)/1000;
+    last=ts;
+    fi.y+=fi.speed*dt;
+    if(fi.el) fi.el.style.top=fi.y+'px';
+    if(fi.y>h+10){
+      // Missed
+      if(fi.el){ fi.el.remove(); fi.el=null; }
+      fi.caught=true; // treat as gone
+      if(opts&&opts.onMiss) opts.onMiss(fi);
+      return;
+    }
+    fi.raf=requestAnimationFrame(frame);
+  }
+  fi.raf=requestAnimationFrame(frame);
+}
+
+/* ================================================================
+   INSTRUCTION LABEL
+================================================================ */
+function addInstruction(text){
+  const d=document.createElement('div');
+  d.className='level-instruction';
+  d.textContent=text;
+  document.body.appendChild(d);
+  setTimeout(()=>d.style.opacity='0',5000);
+  setTimeout(()=>d.remove(),5800);
+  d.style.transition='opacity 0.8s';
+}
+
+/* ================================================================
+   INIT
+================================================================ */
+homeScreen();
+</script>
+</body>
+</html>
